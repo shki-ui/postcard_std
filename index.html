@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="aframe.min.js"></script>
+    <script src="mindar-image-aframe.prod.js"></script>
+    <style>
+        #tap-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            color: white; display: flex;
+            justify-content: center; align-items: center;
+            z-index: 9999; font-family: sans-serif; font-size: 1.2rem;
+            text-align: center; padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Экран взаимодействия для обхода блокировки звука браузером -->
+    <div id="tap-overlay">Нажмите на экран,<br>чтобы включить AR со звуком</div>
+
+    <a-scene mindar-image="imageTargetSrc: targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        
+        <a-assets>
+            <!-- Атрибут muted удален -->
+            <video id="video0" src="video0.mp4" loop="true" crossorigin="anonymous" playsinline></video>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-video src="#video0" width="1.6" height="0.9" position="0 0 0"></a-video>
+        </a-entity>
+
+
+    </a-scene>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const targetEntities = document.querySelectorAll('[mindar-image-target]');
+            const overlay = document.getElementById('tap-overlay');
+
+            targetEntities.forEach((el) => {
+                const targetSettings = el.getAttribute('mindar-image-target');
+                const index = targetSettings.match(/\d+/)[0];
+                
+                const videoElement = el.querySelector('a-video');
+                const videoId = videoElement.getAttribute('src');
+                const videoAsset = document.querySelector(videoId);
+
+                // Проверка существования videoAsset предотвратит ошибку для video1 и video2
+                if (videoAsset) {
+                    el.addEventListener("targetFound", () => {
+                        console.log(`Маркер №${index} найден`);
+                        videoAsset.play();
+                    });
+
+                    el.addEventListener("targetLost", () => {
+                        console.log(`Маркер №${index} потерян`);
+                        videoAsset.pause();
+                    });
+                }
+            });
+
+            // Обработчик первого клика для разблокировки аудиоконтекста
+            document.body.addEventListener('click', () => {
+                const allVideos = document.querySelectorAll('video');
+                allVideos.forEach(v => {
+                    v.muted = false; // Принудительно включаем звук
+                    
+                    // Инициализируем воспроизведение для обхода политик Apple/Google
+                    const playPromise = v.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            v.pause();
+                        }).catch(error => {
+                            console.log("Автовоспроизведение было прервано:", error);
+                        });
+                    }
+                });
+                
+                // Скрываем стартовый экран
+                if(overlay) overlay.style.display = 'none';
+                console.log("Видео-система со звуком готова");
+            }, {once: true});
+        });
+    </script>
+</body>
+</html>
