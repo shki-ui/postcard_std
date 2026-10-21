@@ -13,18 +13,17 @@
             justify-content: center; align-items: center;
             z-index: 9999; font-family: sans-serif; font-size: 1.2rem;
             text-align: center; padding: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <!-- Экран взаимодействия для обхода блокировки звука браузером -->
     <div id="tap-overlay">Нажмите на экран,<br>чтобы включить AR со звуком</div>
 
     <a-scene mindar-image="imageTargetSrc: targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <!-- Атрибут muted удален -->
-            <video id="video0" src="video0.mp4" loop="true" crossorigin="anonymous" playsinline></video>
+            <video id="video0" src="video0.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -33,57 +32,72 @@
             <a-video src="#video0" width="1.6" height="0.9" position="0 0 0"></a-video>
         </a-entity>
 
-
     </a-scene>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const targetEntities = document.querySelectorAll('[mindar-image-target]');
             const overlay = document.getElementById('tap-overlay');
+            
+            const activeMarkers = {};
 
             targetEntities.forEach((el) => {
                 const targetSettings = el.getAttribute('mindar-image-target');
                 const index = targetSettings.match(/\d+/)[0];
+                activeMarkers[index] = false; 
                 
                 const videoElement = el.querySelector('a-video');
+                if (!videoElement) return;
+                
                 const videoId = videoElement.getAttribute('src');
                 const videoAsset = document.querySelector(videoId);
 
-                // Проверка существования videoAsset предотвратит ошибку для video1 и video2
                 if (videoAsset) {
                     el.addEventListener("targetFound", () => {
                         console.log(`Маркер №${index} найден`);
-                        videoAsset.play();
+                        activeMarkers[index] = true;
+                        videoAsset.play().catch(e => console.log("Ожидание клика пользователя..."));
                     });
 
                     el.addEventListener("targetLost", () => {
                         console.log(`Маркер №${index} потерян`);
+                        activeMarkers[index] = false;
                         videoAsset.pause();
                     });
                 }
             });
 
-            // Обработчик первого клика для разблокировки аудиоконтекста
-            document.body.addEventListener('click', () => {
-                const allVideos = document.querySelectorAll('video');
-                allVideos.forEach(v => {
-                    v.muted = false; // Принудительно включаем звук
+            if (overlay) {
+                overlay.addEventListener('click', function unlockAudio() {
+                    targetEntities.forEach((el) => {
+                        const targetSettings = el.getAttribute('mindar-image-target');
+                        const index = targetSettings.match(/\d+/)[0];
+                        
+                        const videoElement = el.querySelector('a-video');
+                        if (!videoElement) return;
+                        
+                        const videoId = videoElement.getAttribute('src');
+                        const videoAsset = document.querySelector(videoId);
+                        
+                        if (videoAsset) {
+                            videoAsset.muted = false; 
+                            
+                            const playPromise = videoAsset.play();
+                            if (playPromise !== undefined) {
+                                playPromise.then(() => {
+                                    if (!activeMarkers[index]) {
+                                        videoAsset.pause();
+                                        videoAsset.currentTime = 0;
+                                    }
+                                }).catch(error => console.log("Автовоспроизведение прервано:", error));
+                            }
+                        }
+                    });
                     
-                    // Инициализируем воспроизведение для обхода политик Apple/Google
-                    const playPromise = v.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            v.pause();
-                        }).catch(error => {
-                            console.log("Автовоспроизведение было прервано:", error);
-                        });
-                    }
-                });
-                
-                // Скрываем стартовый экран
-                if(overlay) overlay.style.display = 'none';
-                console.log("Видео-система со звуком готова");
-            }, {once: true});
+                    overlay.style.display = 'none';
+                    console.log("Видео-система со звуком готова");
+                }, {once: true});
+            }
         });
     </script>
 </body>
