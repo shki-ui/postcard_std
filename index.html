@@ -38,13 +38,13 @@
         document.addEventListener("DOMContentLoaded", () => {
             const targetEntities = document.querySelectorAll('[mindar-image-target]');
             const overlay = document.getElementById('tap-overlay');
-            
             const activeMarkers = {};
 
-            targetEntities.forEach((el) => {
-                const targetSettings = el.getAttribute('mindar-image-target');
-                const index = targetSettings.match(/\d+/)[0];
-                activeMarkers[index] = false; 
+            // Проходим по каждому маркеру
+            targetEntities.forEach((el, index) => {
+                // Используем порядковый номер элемента (0, 1, 2) вместо парсинга атрибутов
+                const markerId = index;
+                activeMarkers[markerId] = false; 
                 
                 const videoElement = el.querySelector('a-video');
                 if (!videoElement) return;
@@ -54,25 +54,24 @@
 
                 if (videoAsset) {
                     el.addEventListener("targetFound", () => {
-                        console.log(`Маркер №${index} найден`);
-                        activeMarkers[index] = true;
-                        videoAsset.play().catch(e => console.log("Ожидание клика пользователя..."));
+                        console.log(`Маркер №${markerId} найден`);
+                        activeMarkers[markerId] = true;
+                        videoAsset.play().catch(e => console.log("Ожидание клика..."));
                     });
 
                     el.addEventListener("targetLost", () => {
-                        console.log(`Маркер №${index} потерян`);
-                        activeMarkers[index] = false;
+                        console.log(`Маркер №${markerId} потерян`);
+                        activeMarkers[markerId] = false;
                         videoAsset.pause();
                     });
                 }
             });
 
+            // Обрабатываем клик по оверлею
             if (overlay) {
-                overlay.addEventListener('click', function unlockAudio() {
-                    targetEntities.forEach((el) => {
-                        const targetSettings = el.getAttribute('mindar-image-target');
-                        const index = targetSettings.match(/\d+/)[0];
-                        
+                overlay.addEventListener('click', () => {
+                    targetEntities.forEach((el, index) => {
+                        const markerId = index;
                         const videoElement = el.querySelector('a-video');
                         if (!videoElement) return;
                         
@@ -85,15 +84,17 @@
                             const playPromise = videoAsset.play();
                             if (playPromise !== undefined) {
                                 playPromise.then(() => {
-                                    if (!activeMarkers[index]) {
+                                    // Ставим на паузу, только если этот маркер сейчас не в камере
+                                    if (!activeMarkers[markerId]) {
                                         videoAsset.pause();
                                         videoAsset.currentTime = 0;
                                     }
-                                }).catch(error => console.log("Автовоспроизведение прервано:", error));
+                                }).catch(e => console.log("Автовоспроизведение прервано:", e));
                             }
                         }
                     });
                     
+                    // Скрываем надпись
                     overlay.style.display = 'none';
                     console.log("Видео-система со звуком готова");
                 }, {once: true});
