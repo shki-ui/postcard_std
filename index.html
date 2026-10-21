@@ -26,10 +26,21 @@
             <video id="video0" src="video0.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
         </a-assets>
 
+        <a-assets>
+            <video id="video1" src="video1.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
             <a-video src="#video0" width="1" height="0.5625" position="0 0 0"
+                     material="transparent: true; opacity: 0"
+                     animation="property: material.opacity; from: 0; to: 1; dur: 1000; startEvents: fadein; easing: easeInOutQuad">
+            </a-video>
+        </a-entity>
+
+        <a-entity mindar-image-target="targetIndex: 1">
+            <a-video src="#video1" width="1" height="0.5625" position="0 0 0"
                      material="transparent: true; opacity: 0"
                      animation="property: material.opacity; from: 0; to: 1; dur: 1000; startEvents: fadein; easing: easeInOutQuad">
             </a-video>
