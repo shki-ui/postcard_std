@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <div id="tap-overlay">Нажмите на экран,<br>чтобы включить AR со звуком</div>
+    <div id="tap-overlay">Нажмите на экран,<br>чтобы оживить картинку</div>
 
     <a-scene mindar-image="imageTargetSrc: targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
@@ -29,7 +29,7 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-            <a-video src="#video0" width="1.6" height="0.9" position="0 0 0"></a-video>
+            <a-video src="#video0" width="1" height="0.5625" position="0 0 0"></a-video>
         </a-entity>
 
     </a-scene>
@@ -40,9 +40,7 @@
             const overlay = document.getElementById('tap-overlay');
             const activeMarkers = {};
 
-            // Проходим по каждому маркеру
             targetEntities.forEach((el, index) => {
-                // Используем порядковый номер элемента (0, 1, 2) вместо парсинга атрибутов
                 const markerId = index;
                 activeMarkers[markerId] = false; 
                 
@@ -67,7 +65,6 @@
                 }
             });
 
-            // Обрабатываем клик по оверлею
             if (overlay) {
                 overlay.addEventListener('click', () => {
                     targetEntities.forEach((el, index) => {
@@ -84,7 +81,6 @@
                             const playPromise = videoAsset.play();
                             if (playPromise !== undefined) {
                                 playPromise.then(() => {
-                                    // Ставим на паузу, только если этот маркер сейчас не в камере
                                     if (!activeMarkers[markerId]) {
                                         videoAsset.pause();
                                         videoAsset.currentTime = 0;
@@ -93,8 +89,7 @@
                             }
                         }
                     });
-                    
-                    // Скрываем надпись
+
                     overlay.style.display = 'none';
                     console.log("Видео-система со звуком готова");
                 }, {once: true});
